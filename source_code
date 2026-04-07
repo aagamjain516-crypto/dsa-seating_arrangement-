@@ -1,169 +1,118 @@
 #include <stdio.h>
 #include <string.h>
-#include <math.h>
-
 #define MAX 100
-
 struct Student {
-    char name[50];
-    char subject[50];
+ char name[50];
+ char subject[50];
 };
-
 int graph[MAX][MAX];
 int color[MAX];
-
 // Greedy Coloring
 void greedyColoring(int V) {
-    for (int i = 0; i < V; i++)
-        color[i] = -1;
-
-    color[0] = 0;
-
-    int available[MAX];
-
-    for (int u = 1; u < V; u++) {
-        for (int i = 0; i < V; i++)
-            available[i] = 1;
-
-        for (int i = 0; i < V; i++) {
-            if (graph[u][i] && color[i] != -1)
-                available[color[i]] = 0;
-        }
-
-        int c;
-        for (c = 0; c < V; c++) {
-            if (available[c])
-                break;
-        }
-
-        color[u] = c;
-    }
+ for (int i = 0; i < V; i++)
+ color[i] = -1;
+ color[0] = 0;
+ int available[MAX];
+ for (int u = 1; u < V; u++) {
+ for (int i = 0; i < V; i++)
+ available[i] = 1;
+ for (int i = 0; i < V; i++) {
+ if (graph[u][i] && color[i] != -1)
+ available[color[i]] = 0;
+ }
+ int c;
+ for (c = 0; c < V; c++) {
+ if (available[c])
+ break;
+ }
+ color[u] = c;
+ }
 }
-
 int main() {
-    int n;
-    printf("Enter number of students: ");
-    scanf("%d", &n);
-
-    struct Student s[MAX];
-
-    printf("\nEnter (Name Subject):\n");
-    for (int i = 0; i < n; i++) {
-        scanf("%s %s", s[i].name, s[i].subject);
-    }
-
-    // Auto rows > cols
-    int rows = ceil(sqrt(n));
-    int cols = ceil((float)n / rows);
-
-    if (rows <= cols)
-        rows = cols + 1;
-
-    // Remove fully empty rows
-    while ((rows - 1) * cols >= n) {
-        rows--;
-    }
-
-    int V = rows * cols;
-
-    printf("\n====================================\n");
-    printf("   CLASSROOM SEATING ARRANGEMENT\n");
-    printf("====================================\n");
-    printf("Grid Size: %d x %d\n\n", rows, cols);
-
-    // Build graph
-    for (int i = 0; i < V; i++)
-        for (int j = 0; j < V; j++)
-            graph[i][j] = 0;
-
-    for (int i = 0; i < rows; i++) {
-        for (int j = 0; j < cols; j++) {
-            int u = i * cols + j;
-
-            if (j + 1 < cols) {
-                int v = i * cols + (j + 1);
-                graph[u][v] = graph[v][u] = 1;
-            }
-
-            if (i + 1 < rows) {
-                int v = (i + 1) * cols + j;
-                graph[u][v] = graph[v][u] = 1;
-            }
-        }
-    }
-
-    greedyColoring(V);
-
-    // Map subjects
-    char subjects[MAX][50];
-    int subjectCount = 0;
-
-    for (int i = 0; i < n; i++) {
-        int found = -1;
-
-        for (int j = 0; j < subjectCount; j++) {
-            if (strcmp(subjects[j], s[i].subject) == 0) {
-                found = j;
-                break;
-            }
-        }
-
-        if (found == -1) {
-            strcpy(subjects[subjectCount], s[i].subject);
-            subjectCount++;
-        }
-    }
-
-    int used[MAX] = {0};
-
-    // CLASSROOM BOX OUTPUT
-    for (int i = 0; i < rows; i++) {
-
-        // Top border
-        for (int j = 0; j < cols; j++)
-            printf("+------------");
-        printf("+\n");
-
-        // Content row
-        for (int j = 0; j < cols; j++) {
-            int v = i * cols + j;
-            int c = color[v];
-
-            int placed = 0;
-
-            for (int k = 0; k < n; k++) {
-                if (!used[k]) {
-
-                    int subIndex = -1;
-
-                    for (int x = 0; x < subjectCount; x++) {
-                        if (strcmp(subjects[x], s[k].subject) == 0) {
-                            subIndex = x;
-                            break;
-                        }
-                    }
-
-                    if (subIndex == c) {
-                        printf("| %-5s %-3s ", s[k].name, s[k].subject);
-                        used[k] = 1;
-                        placed = 1;
-                        break;
-                    }
-                }
-            }
-
-            if (!placed)
-                printf("| %-10s ", "Empty");
-        }
-        printf("|\n");
-    }
-
-    // Bottom border
-    for (int j = 0; j < cols; j++)
-        printf("+------------");
-    printf("+\n");
-
-    printf("\n====================================\n");
-
-    return 0;
+ int n;
+ printf("Enter number of students: ");
+ scanf("%d", &n);
+ struct Student s[MAX];
+ printf("\nEnter (Name Subject):\n");
+ for (int i = 0; i < n; i++) {
+ scanf("%s %s", s[i].name, s[i].subject);
+ }
+ // STEP 1: Build graph (same subject)
+ for (int i = 0; i < n; i++) {
+ for (int j = 0; j < n; j++) {
+ if (i != j && strcmp(s[i].subject, s[j].subject) == 0)
+ graph[i][j] = 1;
+ else
+ graph[i][j] = 0;
+ }
+ }
+ // STEP 2: Greedy Coloring
+ greedyColoring(n);
+ // STEP 3: Seating with adjacency check
+ int rows = 3;
+ int cols = (n + rows - 1) / rows;
+ struct Student grid[10][10];
+ int used[MAX] = {0};
+ for (int i = 0; i < rows; i++) {
+ for (int j = 0; j < cols; j++) {
+ int placed = 0;
+ for (int k = 0; k < n; k++) {
+ if (used[k]) continue;
+ int ok = 1;
+ // Check subject adjacency
+ if (j > 0 && strcmp(grid[i][j-1].subject, s[k].subject) == 0)
+ ok = 0;
+ if (i > 0 && strcmp(grid[i-1][j].subject, s[k].subject) == 0)
+ ok = 0;
+ // Prefer different color also
+ if (j > 0 && color[k] == color[k]) {
+ // no strict block, just preference (optional)
+ }
+ if (ok) {
+ grid[i][j] = s[k];
+ used[k] = 1;
+ placed = 1;
+ break;
+ }
+ }
+ // fallback
+ if (!placed) {
+ for (int k = 0; k < n; k++) {
+ if (!used[k]) {
+ grid[i][j] = s[k];
+ used[k] = 1;
+ break;
+ }
+ }
+ }
+ }
+ }
+ // PRINT
+ printf("\n====================================\n");
+ printf(" FINAL SEATING ARRANGEMENT\n");
+ printf("====================================\n");
+ for (int i = 0; i < rows; i++) {
+ for (int j = 0; j < cols; j++)
+ printf("+------------------");
+ printf("+\n");
+ for (int j = 0; j < cols; j++) {
+ printf("| %-5s %-6s(%d) ",
+ grid[i][j].name,
+ grid[i][j].subject,
+ color[i*cols + j]); // display color
+ }
+ printf("|\n");
+ }
+ for (int j = 0; j < cols; j++)
+ printf("+------------------");
+ printf("+\n");
+ printf("\nColor Assignment:\n");
+ for (int i = 0; i < n; i++) {
+ printf("%s (%s) -> Color %d\n",
+ s[i].name,
+ s[i].subject,
+ color[i]);
+ }
+ printf("\n====================================\n");
+ return 0;
 }
