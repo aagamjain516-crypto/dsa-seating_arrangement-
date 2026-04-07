@@ -1,118 +1,162 @@
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
+
 #define MAX 100
+
 struct Student {
- char name[50];
- char subject[50];
+    char name[50];
+    char subject[50];
 };
+
 int graph[MAX][MAX];
 int color[MAX];
+
 // Greedy Coloring
 void greedyColoring(int V) {
- for (int i = 0; i < V; i++)
- color[i] = -1;
- color[0] = 0;
- int available[MAX];
- for (int u = 1; u < V; u++) {
- for (int i = 0; i < V; i++)
- available[i] = 1;
- for (int i = 0; i < V; i++) {
- if (graph[u][i] && color[i] != -1)
- available[color[i]] = 0;
- }
- int c;
- for (c = 0; c < V; c++) {
- if (available[c])
- break;
- }
- color[u] = c;
- }
+    for (int i = 0; i < V; i++)
+        color[i] = -1;
+
+    color[0] = 0;
+
+    int available[MAX];
+
+    for (int u = 1; u < V; u++) {
+
+        for (int i = 0; i < V; i++)
+            available[i] = 1;
+
+        for (int i = 0; i < V; i++) {
+            if (graph[u][i] && color[i] != -1)
+                available[color[i]] = 0;
+        }
+
+        int c;
+        for (c = 0; c < V; c++) {
+            if (available[c])
+                break;
+        }
+
+        color[u] = c;
+    }
 }
+
 int main() {
- int n;
- printf("Enter number of students: ");
- scanf("%d", &n);
- struct Student s[MAX];
- printf("\nEnter (Name Subject):\n");
- for (int i = 0; i < n; i++) {
- scanf("%s %s", s[i].name, s[i].subject);
- }
- // STEP 1: Build graph (same subject)
- for (int i = 0; i < n; i++) {
- for (int j = 0; j < n; j++) {
- if (i != j && strcmp(s[i].subject, s[j].subject) == 0)
- graph[i][j] = 1;
- else
- graph[i][j] = 0;
- }
- }
- // STEP 2: Greedy Coloring
- greedyColoring(n);
- // STEP 3: Seating with adjacency check
- int rows = 3;
- int cols = (n + rows - 1) / rows;
- struct Student grid[10][10];
- int used[MAX] = {0};
- for (int i = 0; i < rows; i++) {
- for (int j = 0; j < cols; j++) {
- int placed = 0;
- for (int k = 0; k < n; k++) {
- if (used[k]) continue;
- int ok = 1;
- // Check subject adjacency
- if (j > 0 && strcmp(grid[i][j-1].subject, s[k].subject) == 0)
- ok = 0;
- if (i > 0 && strcmp(grid[i-1][j].subject, s[k].subject) == 0)
- ok = 0;
- // Prefer different color also
- if (j > 0 && color[k] == color[k]) {
- // no strict block, just preference (optional)
- }
- if (ok) {
- grid[i][j] = s[k];
- used[k] = 1;
- placed = 1;
- break;
- }
- }
- // fallback
- if (!placed) {
- for (int k = 0; k < n; k++) {
- if (!used[k]) {
- grid[i][j] = s[k];
- used[k] = 1;
- break;
- }
- }
- }
- }
- }
- // PRINT
- printf("\n====================================\n");
- printf(" FINAL SEATING ARRANGEMENT\n");
- printf("====================================\n");
- for (int i = 0; i < rows; i++) {
- for (int j = 0; j < cols; j++)
- printf("+------------------");
- printf("+\n");
- for (int j = 0; j < cols; j++) {
- printf("| %-5s %-6s(%d) ",
- grid[i][j].name,
- grid[i][j].subject,
- color[i*cols + j]); // display color
- }
- printf("|\n");
- }
- for (int j = 0; j < cols; j++)
- printf("+------------------");
- printf("+\n");
- printf("\nColor Assignment:\n");
- for (int i = 0; i < n; i++) {
- printf("%s (%s) -> Color %d\n",
- s[i].name,
- s[i].subject,
- color[i]);
- }
- printf("\n====================================\n");
- return 0;
+    int n;
+    printf("Enter number of students: ");
+    scanf("%d", &n);
+
+    struct Student s[MAX];
+
+    printf("\nEnter (Name Subject):\n");
+    for (int i = 0; i < n; i++) {
+        scanf("%s %s", s[i].name, s[i].subject);
+    }
+
+    // Build graph (same subject)
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
+            if (i != j && strcmp(s[i].subject, s[j].subject) == 0)
+                graph[i][j] = 1;
+            else
+                graph[i][j] = 0;
+        }
+    }
+
+    greedyColoring(n);
+
+    // Grid logic (rows = cols or cols+1)
+    int cols = (int)sqrt(n);
+    int rows = cols;
+
+    if (rows * cols < n)
+        rows = cols + 1;
+
+    if (rows * cols < n)
+        cols++;
+
+    if (rows * cols < n)
+        rows++;
+
+    struct Student grid[100][100];
+    int filled[100][100] = {0};
+    int used[MAX] = {0};
+
+    // Placement
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < cols; j++) {
+
+            int placed = 0;
+
+            for (int k = 0; k < n; k++) {
+                if (used[k]) continue;
+
+                int ok = 1;
+
+                // LEFT
+                if (j > 0 && filled[i][j-1] &&
+                    strcmp(grid[i][j-1].subject, s[k].subject) == 0)
+                    ok = 0;
+
+                // TOP
+                if (i > 0 && filled[i-1][j] &&
+                    strcmp(grid[i-1][j].subject, s[k].subject) == 0)
+                    ok = 0;
+
+                if (ok) {
+                    grid[i][j] = s[k];
+                    used[k] = 1;
+                    filled[i][j] = 1;
+                    placed = 1;
+                    break;
+                }
+            }
+
+            // leave empty if no student fits
+            if (!placed) {
+                filled[i][j] = 0;
+            }
+        }
+    }
+
+    // Print seating
+    printf("\n====================================\n");
+    printf(" FINAL SEATING ARRANGEMENT\n");
+    printf("====================================\n");
+    printf("Grid Size: %d x %d\n\n", rows, cols);
+
+    for (int i = 0; i < rows; i++) {
+
+        for (int j = 0; j < cols; j++)
+            printf("+------------------");
+        printf("+\n");
+
+        for (int j = 0; j < cols; j++) {
+            if (filled[i][j]) {
+                printf("| %-5s %-6s ",
+                       grid[i][j].name,
+                       grid[i][j].subject);
+            } else {
+                printf("| %-16s ", "Empty");
+            }
+        }
+        printf("|\n");
+    }
+
+    for (int j = 0; j < cols; j++)
+        printf("+------------------");
+    printf("+\n");
+
+    // Color info (separate)
+    printf("\nColor Assignment:\n");
+    for (int i = 0; i < n; i++) {
+        printf("%s (%s) -> Color %d\n",
+               s[i].name,
+               s[i].subject,
+               color[i]);
+    }
+
+    printf("\n====================================\n");
+
+    return 0;
 }
