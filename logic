@@ -1,0 +1,5 @@
+The seating arrangement problem is modeled using a graph where each student is a vertex, and an edge is drawn between students who have the same subject. These edges represent conflicts, meaning such students should not be seated adjacent to each other. This graph representation helps clearly identify all constraints in a structured way.
+
+To handle these conflicts, the Greedy Graph Coloring algorithm is used. It assigns colors to students such that no two connected vertices have the same color. For each student, the algorithm checks the colors of adjacent students and assigns the smallest available color, ensuring that students with the same subject always receive different colors.
+
+Finally, the assigned colors are mapped to seating positions. Students with the same color can sit together, while students with different colors are placed in separate rows or positions. This ensures that no two students with the same subject are seated next to each other, resulting in an efficient and conflict-free seating arrangement.
